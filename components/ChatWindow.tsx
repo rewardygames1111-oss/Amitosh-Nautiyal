@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Sparkles, User, MonitorPlay } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { sendMessageStream, initializeChat } from '../services/geminiService';
+import { sendMessageStream, initializeChat, resetChatSession } from '../services/geminiService';
 import { ChatMessage } from '../types';
 import { GenerateContentResponse } from "@google/genai";
 
@@ -59,9 +59,23 @@ export default function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
           );
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Sorry, I seem to be having trouble connecting to the neural net. Try again later." }]);
+      
+      const errorMsg = error?.message || String(error);
+      
+      if (errorMsg.includes("Requested entity was not found")) {
+        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Access Key Invalid. Rebooting secure connection protocol..." }]);
+        
+        // Reset session and prompt for key
+        resetChatSession();
+        if (window.aistudio) {
+          await window.aistudio.openSelectKey();
+          setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Connection re-established. Please try your request again." }]);
+        }
+      } else {
+        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Sorry, I seem to be having trouble connecting to the neural net. Try again later." }]);
+      }
     } finally {
       setIsLoading(false);
     }

@@ -30,6 +30,10 @@ export const getChatSession = (): Chat | null => {
   return chatSession;
 };
 
+export const resetChatSession = () => {
+  chatSession = null;
+};
+
 export const sendMessageStream = async (message: string) => {
   const session = getChatSession();
   if (!session) {
